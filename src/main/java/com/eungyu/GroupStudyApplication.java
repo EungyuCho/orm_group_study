@@ -1,4 +1,4 @@
-package com.eungyu.group_study;
+package com.eungyu;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
