@@ -10,7 +10,7 @@
         <a href="https://github.com/EungyuCho/orm_group_study/blob/master/readme/one1.md">JPA 소개</a> 🦰 
     </li>
     <li>
-        <a href="https://github.com/EungyuCho/orm_group_study/blob/master/readme/ne2.md">JPA 시작</a> 🎮 
+        <a href="https://github.com/EungyuCho/orm_group_study/blob/master/readme/one2.md">JPA 시작</a> 🎮 
     </li>
     <li>
         <a href="https://github.com/EungyuCho/orm_group_study/blob/master/readme/one3.md">영속성 관리</a> 🧺
