@@ -1,10 +1,18 @@
 package com.eungyu.nonejpa.model.member;
 
-public class Member {
+import static com.google.common.base.Preconditions.checkNotNull;
+
+public class MemberNoneJPA {
     private String memberId;
     private String name;
 
-    public Member(String memberId, String name) {
+    public MemberNoneJPA(String memberId) {
+        this(memberId, "undefined");
+    }
+
+    public MemberNoneJPA(String memberId, String name) {
+        checkNotNull(memberId, "memberId must be provided");
+
         this.memberId = memberId;
         this.name = name;
     }
@@ -24,13 +32,14 @@ public class Member {
     public void setName(String name) {
         this.name = name;
     }
+
     static public class Builder {
         private String memberId;
         private String name;
 
         public Builder() {}
 
-        public Builder(Member member) {
+        public Builder(MemberNoneJPA member) {
             this.memberId = member.memberId;
             this.name = member.name;
         }
@@ -45,8 +54,8 @@ public class Member {
             return this;
         }
 
-        public Member build() {
-            return new Member(memberId, name);
+        public MemberNoneJPA build() {
+            return new MemberNoneJPA(memberId, name);
         }
     }
 }

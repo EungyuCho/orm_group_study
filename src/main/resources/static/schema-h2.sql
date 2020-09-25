@@ -1,7 +1,8 @@
-DROP TABLE IF EXISTS member CASCADE;
+DROP TABLE IF EXISTS MEMBER CASCADE;
 
-CREATE TABLE member (
-  member_id         varchar(30) NOT NULL,
-  name              varchar(10) NOT NULL,
-  PRIMARY KEY (member_id)
+CREATE TABLE MEMBER (
+  ID                varchar(255) NOT NULL,
+  NAME              varchar(255),
+  AGE               INTEGER,
+  PRIMARY KEY (ID)
 );

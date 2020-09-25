@@ -1,5 +1,6 @@
 <h1><b>JPA 소개 🦰</b></h1>
 <hr/><br/>
+<a href="https://github.com/EungyuCho/orm_group_study/blob/master/README.md">목차로 돌아가기</a> 🏃 
 <h2>1. JPA 소개</h2>
 <br/>기존에 데이터 접근 계층을 개발 하는 과정은 SQL을 수정 해야 하고, JDBC API를 계속 바꿔줘야 하는 단점이 있었다.<br><br>
 <h4>1-1. SQL을 직접 다룰 때 발생하는 문제점</h4><hr>
