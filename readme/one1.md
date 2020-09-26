@@ -130,7 +130,7 @@ Team team = member.getTeam();
 jpa는 외래키로 변환해서 INSERT하는 일과 조회할 때 외래키를 참조를 변환하는 일도 모두 처리해준다.<br>
 <br>
 3. 객체 그래프 탐색
-<img src="img/graphConstraint.PNG" width="450px" height="300px">
+<img src="img/graphConstraint.PNG" width="800px" height="350px">
 객체관계가 위처럼 설계되어있다고 가정해보자.
 다음은 객체를 탐색하는 코드다.<br>
 <code>member.getOrder.getOrderItem();</code><br>
