@@ -123,3 +123,39 @@ transaction.commit();   //트랜잭션 커밋</code></pre>
 위처럼 persist 시 데이터를 캐시에 저장하고 쓰기지연 SQL저장소에 SQL문을 전부 저장한다.
 <img src="img/entity_db_flush.PNG" width="800px" height="350px">
 flush 시 처음 스냅샷이 차이(처음 엔티티가 들어왔을때의 상태와 현재 상태를 비교)가 있는지 비교해서 변경이 있을 시 UPDATE SQL문을 생성하고, 데이터베이스에 지연 SQL 저장소에 있던 SQL문들을 반영한다.<br>
+<h3>엔티티 수정</h3>
+<pre><code>EntityManager em = emf.createEntityManager();
+EntityTransaction transaction = em.getTransaction();
+transaction.begin();    //트랜잭션 시작
+<br>
+//영속 엔티티 조회
+Member memberA = em.find(Member.class, "memberA");
+<br>
+//영속 엔티티 데이터 수정
+memberA.setUsername("hi");
+memberA.setAge(10);
+<br>
+//em.update(member) -> 이러한 코드가 있어야하는건 아닐까?<br>
+transaction.commit();</code></pre>
+위의 코드처럼 find를 하고나서 해당 엔티티를 수정하려면 업데이트를 따로 해줘야하는게 아닐까 생각할 수 있지만,<br>
+엔티티의 변경을 데이터베이스에 반영하는 기능을 가진 변경감지(dirty checking)이라는 기능 덕분에 이를 피할 수 있다.<br>
+<br>
+JPA는 엔티티를 Presistence Context에 보관할때 최초의상태를 복사해서 스냅샷을 저장해둔다. 그리고 flush 시점에 스냅샷과 flush 전 엔티티의 상태를 확인해서 변경된 엔티티를 확인해서 수정쿼리를 SQL저장소에 보낸다.
+<blockquote>
+처리 순서는 다음과 같다.<br>
+<ol>
+    <li>트랜잭션을 커밋하면 엔티티 매니저 내부에서 먼저 flush가 호출된다.</li>
+    <li>엔티티와 스냅샷을 비교해서 변경된 엔티티를 찾는다</li>
+    <li>변경된 엔티티가 있으면 수정 쿼리를 생성해서 쓰기 지연 SQL저장소에 보낸다.</li>
+    <li>쓰기 지연 저장소의 SQL을 데이터베이스에 보낸다.</li>
+    <li>트랜잭션을 커밋한다.</li>
+</ol>
+❗ 변경 감지기능은 영속성 컨텍스트가 관리하는 영속상태인 엔티티에만 적용된다.
+</blockquote>
+JPA는 업데이트 쿼리를 생성할 때 기본전략으로 모든 업데이트 컬럼을 업데이트하는데, hibernate의 DynamicUpdate를 사용 시 수정된 데이터만 동적으로 Update할 수 있다.
+<h3>엔티티 삭제</h3>
+<pre><code>Member memberA = em.find(Member.class, "memberA");   //삭제 대상 엔티티 조회
+em.remove(memberA); //엔티티 삭제</code></pre>
+em.remove()에 엔티티를 넘겨주면 삭제 SQL을 쓰기 지원 SQL 저장소에 등록하고 트랜잭션을 커밋해서 플러시를 호출 시 데이터베이스에 삭제를 반영한다.<br>
+remove를 하는 순간 Persistence Context에서 삭제되므로 재사용 안하는게 좋다.
+
