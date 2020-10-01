@@ -158,4 +158,124 @@ JPA는 업데이트 쿼리를 생성할 때 기본전략으로 모든 업데이�
 em.remove(memberA); //엔티티 삭제</code></pre>
 em.remove()에 엔티티를 넘겨주면 삭제 SQL을 쓰기 지원 SQL 저장소에 등록하고 트랜잭션을 커밋해서 플러시를 호출 시 데이터베이스에 삭제를 반영한다.<br>
 remove를 하는 순간 Persistence Context에서 삭제되므로 재사용 안하는게 좋다.
-
+<br>
+<h3>플러시</h3>
+플러시는 Persistence Context의 변경 내용을 데이터베이스에 반영한다.<br>
+<blockquote>위에 설명했듯이 스냅샷과 플러시할 때 상태를 비교해서 수정된 엔티티를 확인하여 수정쿼리를 SQL 저장소에 등록하고 쿼리들을 전송한다.<br>플러시는 데이터베이스에 반영을하는것이고 Persistence Context의 엔티티를 지우지는 않는다.</blockquote>
+플러시를 하는 방법은 3가지가 있다. <br>
+<ol>
+    <li>em.flush()를 호출한다</li>
+    <li>트랜잭션 커밋 시(자동 호출)</li>
+    <li>JPQL 쿼리 실행 시(자동 호출)</li>
+</ol>
+플러시 모드 옵션으로 FlushModeType.AUTO와 FlushModeType.COMMIT이 있는데 AUTO가 default type이고, COMMIT으로 할 시 쿼리 실행시에 플러시가 안되고 커밋할 때에만 플러시를 한다.<br>
+<hr>
+<h1>준영속</h1>
+<hr>
+영속성 컨텍스트에서 분리된 상태를 준영속상태라 하는데 준영속 상태의 엔티티는 영속성 컨텍스트가 제공하는 기능을 사용할 수 없다.<br>
+준영속 엔티티를 만드는 방법은 크게 3가지가 있다.<br>
+<ol>
+    <li><code>em.detach(entity);</code> 특정 엔티티만 준영속 상태로 전환한다.</li>
+    <li><code>em.clear();</code> 영속성 컨텍스트를 완전히 초기화한다.</li>
+    <li><code>em.close();</code> 영속성 컨텍스트를 종료한다.</li>
+</ol>
+위 3개의 케이스를 순서대로 알아보자.
+<br>
+<br>
+<h3>엔티티를 준영속 상태로 전환: <code>detach();</code></h3>
+<code>em.detach()</code> 메소드는 엔티티를 준영속 상태로 만든다.
+<pre><code>public void testDetached() {
+    ...
+    // 회원 엔티티 생성, 비영속 상태
+    Member member = new Member();
+    member.setId("memberA");
+    member.setUsername("회원A");<br>
+    //회원 엔티티 영속 상태
+    em.persist(member);<br>
+    //회원 엔티티를 영속성 컨텍스트에서 분리, 준영속 상태
+    em.detach(member);<br>
+    transaction.commit();   //트랜잭션 커밋
+}</code></pre>
+위는 memberA의 엔티티를 추가하고 나서 <code>detach</code>하는 코드이다.<br>
+<code>detach</code>를 하는 순간 1차 캐시와 SQL저장소에 있는 관련 SQL이 삭제된다.<br>
+<img src="img/entity_detach01.PNG" width="800px" height="350px">
+<code>detach</code>를 실행 시
+<img src="img/entity_detach02.PNG" width="800px" height="350px">
+1차 캐시와 SQL저장소의 관련 엔티티가 삭제 제거되어 해당 엔티티가 분리된 상태가 된다.
+<h3>영속성 컨텍스트 초기화: <code>clear();</code></h3>
+<code>em.clear()</code> 메소드는 Persistance Context를 초기화하여 모든 엔티티를 준영속 상태로 만든다.
+<pre><code>//엔티티 조회, 영속 상태
+Member member = em.find(Member.class, "memberA");<br>
+em.clear(); //영속성 컨텍스트 초기화<br>
+//준영속 상태
+member.setUsername("changeName");</code></pre>
+<img src="img/entity_clear01.PNG" width="800px" height="350px">
+<code>clear</code>를 실행 시 모든 엔티티가 준영속 상태가 된다.
+<img src="img/entity_clear02.PNG" width="800px" height="350px">
+따라서 <code>member.setUsername("changeName");</code>은 영속성 컨텍스트가 지원하는 변경감지가 동작하지 않으므로 데이터베이스에 반영되지 않는다.
+<h3>영속성 컨텍스트 종료: <code>close();</code></h3>
+영속성 컨텍스트를 종료해도 모든 엔티티가 준영속 상태가 된다.
+<pre><code>public void closeEntityManager() {<br>
+    EntityManagerFactory emf =
+        Persistence.createEntityManagerFactory("jpaboock");<br>
+    EntityManager em = emf.createEntityManager();
+    Entitytransaction transaction = em.getTransaction();<br>
+    transaction.begin();    //[트랜잭션] - 시작<br>
+    Member memberA = em.find(Member.class, "memberA");
+    Member memberB = em.find(Member.class, "memberB");<br>
+    transaction.commit();   //[트랜잭션] - 커밋<br>
+    em.close();     //영속성 컨텍스트 닫기(종료)
+    </code></pre>
+그림을 통해 분석해보자.
+<img src="img/entity_close01.PNG" width="800px" height="350px">
+<code>close</code> 실행 전
+<img src="img/entity_close02.PNG" width="800px" height="350px">
+<code>close</code>를 실행 시 Persistance Context가 종료되어 엔티티가 관리되지 않는다.
+<h3>준영속 상태의 특징</h3>
+<ol>
+    <li>거의 비영속 상태에 가깝다</li>
+    <li>식별자 값을 가지고 있다</li>
+    <li>지연 로딩을 할 수 없다</li>
+</ol>
+<h3>병합: <code>merge();</code></h3>
+준영속 상태의 엔티티를 영속상태로 다시 전환하려면 해당 준영속 엔티티를 받아서 <code>merge</code>를 하면 새로운 영속 상태의 엔티티를 반환한다.
+<pre><code>public class ExamMergeMain{<br>
+    static EntityManaagerFactory emf = 
+        Persistence.createEntityManagerFactory("jpaboock");<br>
+    public static void main(String args[])  {<br>
+        Member member = createMember("memberA", "회원1"); //①<br>
+        member.setUsername("회원명변경");    //② 준영속 상태에서 변경<br>
+        mergeMember(member);    //③
+    }<br>
+    static Member createMember(String id, String username)  {
+        //==영속성 컨텍스트1 시작==//
+        EntityManager em1 = emf.createEntityManager();
+        EntityTransaction tx1 = em1.getTransaction();
+        tx1.begin();<br>
+        Member member = new Member();
+        member.setId(id);
+        member.setUsername(username);<br>
+        em1.persist(member);
+        tx1.commit();<br>
+        em.close(); //영속성 컨텍스트1 종료,
+                    //member 엔티티는 준영속 상태가 된다.
+        //==영속성 컨텍스트1 종료==//<br>
+        return member();
+    }<br>
+    static void mergeMember(Member member)  {
+        //== 영속성 컨텍스트2 시작==//
+        EntityManager em2 = emf.createEntityManager();
+        EntityTransaction tx2 = em1.getTransaction();
+        tx2.begin();<br>
+        Member mergeMember = em2.merge(member);
+        tx2.commit();<br>
+        //준영속 상태
+        System.out.println("mergeMember = " +
+            mergeMember.getUsername());<br>
+        System.out.println("em2 contains member = " +
+            em2.contains(member));<br>
+        System.out.println("em2 contains mergeMember = " +
+            em2.contains(mergeMember));<br>
+        em2.close();
+        //==영속성 컨텍스트2 종료==//
+    </code></pre>
