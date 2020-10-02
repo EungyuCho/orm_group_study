@@ -279,3 +279,9 @@ member.setUsername("changeName");</code></pre>
         em2.close();
         //==영속성 컨텍스트2 종료==//
     </code></pre>
+①에 있는 member엔티티는 <code>createMember</code> 영속성 컨텍스트1에서 영속상태 였다가 컨텍스트1이 종료되면서 준영속 상태가 되고나서 member엔티티를 반환한다.<br>
+②에서 <code>member.setUsername("회원명변경")</code>에서 엔티티 이름을 변경했지만 준영속상태이므로 데이터베이스에 반영 할 수 없다.<br>
+③준영속상태의 엔티티를 수정하려면 병합<code>merge()</code>를 해야한다.<br>
+<code>merge()</code>로 준영속상태인 member 엔티티를 데이터베이스에 반영하고, mergeMember라는 새로운 영속 엔티티를 반환한다.
+<img src="img/entity_merge.PNG" width="800px" height="350px">
+<blockquote><code>merge()</code>메소드는 비영속 엔티티도 영속 상태로 만들 수 있다.</blockquote>
