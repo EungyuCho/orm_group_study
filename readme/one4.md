@@ -206,6 +206,62 @@ IDENTITY전략과 다른점은 <code>em.persist()</code>호출 시 시퀀스를 
     <li>name<blockquote>식별자 생성기 이름<br>
     기본값 : 필수</blockquote></li>
     <li>sequenceName<blockquote>데이터베이스에 등록되어 있는 시퀀스 이름<br>
-    기본값 : 필수</blockquote></li>
-    <li>schema<blockquote>schema 기능이 있는 데이터베이스에서 schema를 매핑한다.</blockquote></li>
+    기본값 : hibernate_sequence</blockquote></li>
+    <li>initialValue<blockquote>DDL 생성 시에만 사용되며, 시퀸스 DDL을 생성할 때 처음 시작하는 수를 지정한다.<br>
+    기본값 : 1</blockquote></li>
+    <li>allocationSize<blockquote>시퀀스 한 번 호출에 증가하는 수(성능최적화에 사용됨)<br>
+    기본값 : 50</blockquote></li>
+    <li>catalog schema<blockquote>데이터베이스 catalog, schema이름</blockquote></li>
 </ol>
+따라서 매핑되는 DDL은 다음과 같다.
+<pre><code>create sequence [sequenceName]
+start with [initialValue] increment by [allocationSize]</code></pre>
+<blockquote>allocationSize는 시퀀스에 접근하는 횟수를 줄이기 위해 한번에 시퀀스를 증가시킨 후 메모리까지 식별자를 할당해서 데이터를 등록할 때 메모리에 있는 시퀸스값을 할당한다. 또 Size가 max일 경우 한번 더 allocationSize만큼 다시 시퀀스를 증가시킨 후 재할당한다.<br>
+이 기능은 hibernate.id.new_generator_mappings 속성이 true여야 동작한다.</blockquote>
+<h5>6-4. TABLE 전략</h5>
+TABLE 전략은 키 생성 전용 테이블을 만들고 여기에 이름과 값으로 사용할 컬럼을 만들어서 시퀀스를 흉내내는 전략이다.<br>
+테이블은 아래와 같이 생성하면 된다.
+<pre><code>//DDL<br>CREATE TABLE MY_SEQUENCES{
+    sequence_name varchar(255) not null,
+    next_val bigint,
+    primary key(  sequence_name )
+}<br>
+//code
+@Entity
+@TableGenerator(
+    name = "BOARD_SEQ_GENERATOR",
+    table = "MY_SEQUENCES",
+    pkColumnValue = "BOARD_SEQ", allocationSize = 1)
+public class Board{<br>
+    @Id
+    @GeneratedValue(strategy = GenerationType.TABLE,
+        genertor = "BOARD_SEQ_GENERATOR")
+    private Long id;
+    ...
+}</code></pre>
+<code>@TableGenerator</code>을 먼저 사용해서 테이블 키 생성기를 등록하고 BOARD_SEQ_GENERATOR라는 이름의 생성기로 MY_SEQUNCES라는 테이블을 매핑했다.
+<br>
+이제 <code>@TableGenerator</code>의 속성을 분석해보자.<br>
+<ol>
+    <li>name<blockquote>식별자 생성기 이름<br>
+    기본값 : 필수</blockquote></li>
+    <li>table<blockquote>키생성 테이블 명<br>
+    기본값 : hibernate_sequences</blockquote></li>
+    <li>pkColumnName<blockquote>시퀀스 컬럼명<br>
+    기본값 : sequence_name</blockquote></li>
+    <li>valueColumnValue<blockquote>시퀀스 값 컬럼명<br>
+    기본값 : next_val</blockquote></li>
+    <li>pkColumnValue<blockquote>키로 사용할 값 이름<br>
+    기본값 : 엔티티 이름</blockquote></li>
+    <li>initialValue<blockquote>초기 값. 마지막으로 생성된 값이 기준이다<br>
+    기본값 : 0</blockquote></li>
+    <li>allocationSize<blockquote>시퀀스 한 번 호출에 증가하는 수(성능최적화에 사용됨)br>
+    기본값 : 50</blockquote></li>
+    <li>catalog schema<blockquote>데이터베이스 catalog, schema이름</blockquote></li>
+    <li>uniqueConstraints(DDL)<blockquote>유니크 제약 조건을 지정할 수 있다.</blockquote></li>
+</ol>
+<blockquote>TABLE전략은 값을 조회하면서 SELECT쿼리르 사용하고 값을 증가시키기 위해서 UPDATE를 사용하므로 최적화하려면 SEQUENCE전략과 똑같이 <code>@TableGenerator.allcationSize</code>를 사용하면 된다.</blockquote>
+<h5>6-5. AUTO 전략</h5>
+AUTO 전략은 데이터베이스의 방언에따라 IDENTITY, SEQUENCE, TABLE 전략 중 하나를 자동으로 선택한다.<br>
+예를 들어 Oracle을 선택 시 SEQUENCE를, MySQL을 선택하면 IDENTITY를 사용한다.<br>
+AUTO를 사용할때 SEQUENCE나 TABLE 전략이 섵개되면 시퀀스나 키 생성용 테이블을 미리 만들어 두어야 한다. 만약 스키마 자동 생성 기능ㅇ르 사용한다면 하이버네이트가 기본값으로 적절한 시퀀스나 키 생성용 테이블을 만들어준다.<br>
