@@ -2,18 +2,40 @@ package com.eungyu.jpabook.model;
 
 import javax.persistence.*;
 
+import java.util.Date;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 @Entity
-@Table(name = "MEMBER")
+@SequenceGenerator(
+        name = "BOARD_SEQ_GENERATOR",
+        sequenceName = "BOARD_SEQ", //매핑할 데이터베이스 시퀀스 이름
+        initialValue = 1, allocationSize = 1)
 public class Member {
     @Id
-    @Column(name = "ID")
-    private final String id;    //아이디
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,
+                    generator = "BOARD_SEQ_GENERATOR")
+    private final Long id;    //아이디
 
     @Column(name = "NAME")
     private String username;        //이름
+
     private Integer age;        //나이
+
+    //== 추가==
+    @Enumerated(EnumType.STRING)
+    private RoleType roleType;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createDate;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date lastModifiedDate;
+
+    @Lob
+    private String description;
+
+    //Getter, Setter
 
     public Member(String id) {
         this(id, "undefined", 0);
