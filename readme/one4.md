@@ -71,7 +71,7 @@ public enumRoleType {
 }</code></pre>
 다음 코드들을 분석해 보자<br>
 ① roleType : 자바의 enumd을 사용해서 일반회원은 USER, 관리자는 ADMIN으로 구분했다. 자바의 enum을 사용하려면 <code>@Enumerted</code>어노테이션을 사용하면 된다.<br>
-② createdDate, lastModifiedDate : 자바의 날자 타입은 <code>@Temporal</code>을 사용해서 매핑한다.<br>
+② createdDate, lastModifiedDate : 자바의 날짜 타입은 <code>@Temporal</code>을 사용해서 매핑한다.<br>
 ③ description : 회원을 설명하는 필드는 길이제한이 없으므로 VARCHAR가 아닌 CLOB 타입으로 저장해야한다. <code>@Lob</code>을 사용하면 CLOB,BLOB타입을 매핑할 수 있다.<br>
 <h3>4. 데이터베이스 스키마 자동 생성</h3>
 JPA는 persistence설정에서 스키마 자동생성 속성을 추가해서 데이터베이스를 자동생성 할 수 있다.<br>
@@ -139,7 +139,7 @@ JPA에서 기본키의 생성전략은 다음과 같다<br>
     - TABLE: 키 생성 테이블을 사용한다.</blockquote></li>
 </ol>
 <h5>6-1. 기본 키 할당 전략</h5>
-기본키를 직접 할당하려면 @Id로 맵핑하면 되고 적용가능한 자바 타입은 아래와 같다.
+기본키를 직접 할당하려면 @Id로 매핑하면 되고 적용가능한 자바 타입은 아래와 같다.
 <ol>
     <li>자바 기본형</li>
     <li>자바 래퍼(Wrapper)형</li>
@@ -265,3 +265,104 @@ public class Board{<br>
 AUTO 전략은 데이터베이스의 방언에따라 IDENTITY, SEQUENCE, TABLE 전략 중 하나를 자동으로 선택한다.<br>
 예를 들어 Oracle을 선택 시 SEQUENCE를, MySQL을 선택하면 IDENTITY를 사용한다.<br>
 AUTO를 사용할때 SEQUENCE나 TABLE 전략이 섵개되면 시퀀스나 키 생성용 테이블을 미리 만들어 두어야 한다. 만약 스키마 자동 생성 기능ㅇ르 사용한다면 하이버네이트가 기본값으로 적절한 시퀀스나 키 생성용 테이블을 만들어준다.<br>
+<h3>7. 필드와 컬럼 매핑 : 레퍼런스</h3>
+JPA가 제공하는 필드와 컬럼 매핑용 어노테이션들을 레퍼런스형식으로 살펴보자<br>
+<ol>
+    <li>필드와 컬럼 매핑<ol>
+        <li>@Column : 컬럼을 매핑한다.</li>
+        <li>@Enumerated : 자바의 Enum 타입을 매핑한다.</li>
+        <li>@Temporal : 날짜 타입을 매핑한다.</li>
+        <li>@Lob : BLOB, CLOB 타입을 매핑한다.</li>
+        <li>@Transient : 특정 필드를 데이터베이스에 매핑하지 않는다.</li>
+    </ol></li>
+    <li>기타
+        <ol>
+            <li>@Access : JPA가 엔티티에 접근하는 방식을 지정한다.</li>
+        </ol>
+    </li>
+</ol>
+위의 매핑 어노테이션들을 차례대로 알아보자.<br>
+<h4>7-1. <code>@Column</code></h4>
+<code>@Column</code>어노테이션은 테이블 컬럼을 매핑한다. 주로 name, nullable이 주로 사용되고 나머지는 잘 사용되지 않는다.<br>
+<ol>
+    <li>name : 필드와 매핑할 테이블의 컬럼 이름<blockquote>
+    기본값 : 객체의 필드 이름</blockquote></li>
+    <li>insertable : 엔티티 저장 시 필드도 같이 저장<blockquote>
+    기본값 : true</blockquote></li>
+    <li>updateable : 필드 수정 시 같이 수정<blockquote>
+    기본값 : true</blockquote></li>
+    <li>table : 하나의 엔티티를 두 개 이상의 테이블에 매핑할 때 사용한다. 지정한 필드를 다른테이블에 매핑할 수 있다.<blockquote>
+    기본값 : 현재 클래스가 매핑된 테이블</blockquote></li>
+    <li>nullable(DDL) : null 값의 허용 여부를 설정.<blockquote>
+    기본값 : true</blockquote></li>
+    <li>unique(DDL) : @Table의 uniqueConstraint와 같지만 한 컬럼에 간단히 유니크 제약조건을 걸 떄 사용</li>
+    <li>columnDeinition(DDL) : 데이터베이스 컬럼 정보를 직접 줄 수 있다.<blockquote>
+    기본값 : 필드의 자바 타입과 데이터베이스 방언 정보를 사용해서 적절한 컬럼타입을 생성</blockquote></li>
+    <li>length(DL) : 문자 길이 제약조건, String 타입에만 사용한다.<blockquote>
+    기본값 : 255</blockquote></li>
+    <li>percision, scale(DDL) : BigDecimal 타입에서 사용한다(BigInteger도 사용 할 수 있다). precision은 소수점을 포함한 전체 자릿수, scale은 소수의 자릿수다. 참고로 double, float타입에는 적용되지 않는다. 아주 큰 숫자나 정밀한 소수를 다루어야 할 때만 사용한다.<blockquote>
+    기본값 : precision=19, scale=2</blockquote></li>
+</ol>
+<h4>7-2. <code>@Enumerated</code></h4>
+자바의 enum  타입을 매핑할때 사용한다.<br>
+<pre><code>//Enum클래스
+enum RoleType{
+    ADMIN, USER
+}<br>
+//매핑 된 모델 필드
+@Enumerated(EnumType.STRING)
+private RoleType roleType;<br>
+//사용하는 코드
+member.setRoleType(RoleType.ADMIN); //DB에 문자 ADMIN으로 저장 됨
+</code></pre>
+위처럼 필드를 EnumType.STRING으로 저장하면 데이터베이스에 직접 문자로 들어가고,<br>
+EnumType.ORDINAL로 저장 시 ADMIN은 0, USER는 1로 정의된 순서대로 젖아된다.
+<h4>7-3. <code>@Temporal</code></h4>
+날짜 타입을 매핑할때 사용한다. 속성을 먼저 알아보자
+<ol>
+    <li>value: <ol>
+            <li>TemporalType.DATE : 날짜, 데이터베이스 date 타입과 매핑(예: 2013-10-11)</li>
+            <li>TemporalType.TIME : 시간, 데이터베이스 time 타입과 매핑(예: 11:11:11)</li>
+            <li>TemporalType.TIMESTAMP : 날짜와 시간, 데이터베이스 timestamp 타입과 매핑(예: 2013-10-11 11:11:11)</li>
+        </ol><blockquote>
+    기본값 : TemporalType은 필수로 지정해야 한다.</blockquote></li>
+</ol>
+<h4>7-4. <code>@Lob</code></h4>
+<code>@Lob</code>에는 지정할 수 있는 매핑이 없다. 대신에 필드 타입이 문자면 CLOB으로 매핑하고 나머지는 BLOB으로 매핑한다.
+<h4>7-5. <code>@Transient</code></h4>
+이 필드는 매핑하지 않는다. 따라서 데이터베이스에 저장하지않고 조회도 안할때 객체에 임시로 값을 보관하고 싶을 때 사용한다.
+<h4>7-6. <code>@Access</code></h4>
+JPA가 엔티티에 접근하는 방식을 지정한다.
+<ol>
+    <li>필드 접근 : AccessType.FIELD로 지정한다. 필드에 직접 접근하고 접근권한이 private여도 접근이 가능하다.</li>
+    <li>프로퍼티 접근 : AccessType.PROPERTY로 지정한다. 접근자(Getter)를 사용한다.</li>
+</ol>
+<pre><code>@Entity
+@Access(AccessType.FIELD)
+public class Member{<br>
+    @Id
+    private String id;<br>
+    private String data1;
+    private String data2;
+    ...
+}</code></pre>
+필드에 이미 <code>@Id</code>가 선언되어 있으므로 <code>@Access(AccessType.FIELD)</code>로 설정한것과 같으므로 생략 가능하다.
+<pre><code>@Entity
+@Access(AccessType.PROPERTY)
+public class Member{<br>
+    private String id;<br>
+    private String data1;
+    private String data2;<br>
+    @Id
+    public String getId()   {
+        return id;
+    }<br>
+    @Column
+    public String getData1()    {
+        return data1;
+    }<br>
+    public String getData2()    {
+        return data2;
+    }
+}</code></pre>
+<code>@Id</code>가 프로퍼티에 있으므로 <code>@Access(AccessType.PROPERTY)</code>로 설정한것과 같으므로 위와 같이 <code>@Access</code>를 생략 할 수 있다.
