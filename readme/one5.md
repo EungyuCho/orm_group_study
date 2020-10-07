@@ -16,6 +16,36 @@
 <hr>
 <h3>1. 단방향 연관관계</h3>
 연관관계 중에선 다대일(N:1) 단반향 관계를 가장 먼저 이해해야 한다. 지금부터 회원과 팀의 관계를 통해 다대일 단반향 고나계를 알아보자.<br>
-<br><li>회원과 팀이 있다.</li>
-<li>회원은 하나의 팀에만 소속될 수 있다.</li>
-<li>회원과 팀은 다대일 관계다.</li>
+<br>
+<ul>
+    <li>회원과 팀이 있다.</li>
+    <li>회원은 하나의 팀에만 소속될 수 있다.</li>
+    <li>회원과 팀은 다대일 관계다.</li>
+</ul>
+<img src="img/N-1_mapping.PNG" width="800px" height="350px">
+위 그림을 통해 단방향 연관관계를 알아보자.<br>
+<h5>객체 연관관계</h5>
+<ul>
+    <li>회원과 객체는 Member.team 필드(멤버변수)로 팀 객체와 연관관계를 맺는다.</li>
+    <li>회원 객체와 팀 객체는 단방향 관계이다. 회원은 Member.team 필드를 통해서 팀을 참조할 수 있지만 팀은 회원을 알 수 없다.</li>
+</ul>
+<h5>테이블 연관관계</h5>
+<ul>
+    <li>회원 테이블은 TEAM_ID 외래 키로 팀 테이블과 연관관계를 맺는다.</li>
+    <li>회원 테이블과 팀 테이블은 양방향 관계이다. MEMBER테이블의 TEAM_ID 외래키로 MEMBER테이블과 TEAM테이블을 조인할 수 있다. 어느테이블을 기준으로 잡아도 JOIN이 가능하므로 양방향 관계이다.</li>
+</ul>
+위같이 객체는 참조로 연관관계를 맺고 테이블은 외래 키로 연관관계를 맺는다.<br>
+이제 JPA를 사용해서 객체와 테이블의 연관관계를 매핑해 보자.
+<pre><code>@Entity
+public class Member    {<br>
+    @Id
+    @Column(name = "MEMBER_ID")
+    private String id;<br>
+    private String username;<br>
+    //연관관계 매핑
+    @ManyToOne
+    @JoinColumn(name = "TEAM_ID")
+    private Team team;<br>
+    //연관관계 설정
+    public void setTeam(Team team)
+</code></pre>
