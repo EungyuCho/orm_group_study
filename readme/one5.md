@@ -47,5 +47,64 @@ public class Member    {<br>
     @JoinColumn(name = "TEAM_ID")
     private Team team;<br>
     //연관관계 설정
-    public void setTeam(Team team)
+    public void setTeam(Team team)  {
+        this.team = team;
+    }<br>
+    //Getter, Setter ...
+}<br>
+public class Team  {
+    private String id;
+    private String name;<br>
+    //Getter, Setter ...
+}</code></pre>
+위의 코드를 사용해서 회원1과 회원2를 팀1에 소속시켜보자.
+<pre><code> //매핑할 회원 엔티티<br>public static void main(String[] args)  {<br>
+    //생성자(id, 이름)
+    Member member1 = new Member("member1", "회원1");
+    Member member2 = new Member("member2", "회원2");    
+    Team team1 = new Team("team1", "팀1");<br>
+    member1.setTeam(team1);
+    member2.setTeam(team1);<br>
+    Team findTeam = member1.getTeam();
+}<br>
+    //매핑한 팀 엔티티
+@Entity
+public class Team  {<br>
+    @Id
+    @Column(name = "TEAM_ID")
+    private String id;<br>
+    private String name;<br>
+    //Getter, Setter ...
+}    
 </code></pre>
+위에서 회원 엔티티와 팀 엔티티를 매핑했다.<br>
+객체 연관관계는 회원 객체의 Member.team 필드를 사용해서 연관관계를 매핑할 수 있었고, 테이블 연관관계는 회원 테이블의 MEMBER.TEAM_ID 외래 키 컬럼을 사용해서 연관관계를 설정 할 수 있었다.<br>
+회원 엔티티를 보면 연관관계를 매핑하기위한 새로운 어노테이션들이 있는데 이 어노테이션들을 알아보자.
+<ul>
+    <li><code>@ManyToOne</code>: 이름 그대로 다대일(N:1) 관계를 나타내는  매핑 정보다. 연관관계를 매핑할때는 항상 이렇게 다중성을 나타내는 어노테이션을 사용해야 한다.</li>
+    <li><code>@JoinColumn(name="TEAM_ID");</code> 조인 컬럼은 외래 키를 매핑할 때 사용한다. name 속성에는 매핑할 외래 키 이름을 설정한다. 위 코드에서는 회원과 팀 테이블의 TEAM_ID 외래키로 연관관계를 맺으므로 이 값을 설정해서 매핑했다. 생략 할 시 필드 명 + _ + 참조하는 테이블 의 기본키 컬럼 명이 되므로 생략하여도 TEAM_ID가 매핑된다.</li>
+</ul>
+<h5><code>@JoinColumn</code></h5>
+<code>@ManyToOne</code> 어노테이션은 다대일 관계에서 사용한다. 속성들을 살펴보자.
+<ol>
+    <li>name<blockquote>매핑할 외래 키 이름<br>
+    기본값 : 필드명 + _ + 참조하는 테이블의 기본 키 컬럼명</blockquote></li>
+    <li>referencedColumnName<blockquote>외래 키가 참조하는 대상 테이블의 컬럼명<br>
+    기본값 : 참조하는 테이블의 기본 키 컬럼명</blockquote></li>
+    <li>foreignKey(DDL)<blockquote>외래 키 제약조건을 직접 지정할 수 있다. 이 속성은 테이블을 생성할 때에만 사용한다.</blockquote></li>
+    <li>unique, nullable, insertable, updatable, columnDefinition, table<blockquote><code>@Column</code>의 속성과 같다.</blockquote></li>
+</ol>
+<h5><code>@ManyToOne</code></h5>
+<code>@ManyToOne</code> 어노테이션은 다대일 관계에서 사용한다. 주요속성을 살펴보자.
+<ol>
+    <li>optional<blockquote>false로 설정하면 연관된 엔티티가 항상 있어야 한다.<br>
+    기본값 : true</blockquote></li>
+    <li>fetch<blockquote>글로벌 패치 전략을 설정한다. 자세한 내용은 8장에서 다룬다.<br>
+    기본값 : 
+    <ul>
+        <li><code>@ManyToOne = FetchType.EAGER</code></li>
+        <li><code>@OneToMany = FetchType.LAZY</code></li>        
+    </ul></blockquote></li>
+    <li>cascade<blockquote>영속성 전이 기능을 사용한다. 자세한 내용은 8장에서 설명한다.</blockquote></li>
+    <li>targetEntity<blockquote>연관된 엔티티의 타입 정보를 설정한다. 이 기능은 거의 사용하지 않는다. 컬렉션을 사용해도 제네릭 타입으로 타입 정보를 알 수 있다.</blockquote></li>
+</ol>
