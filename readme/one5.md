@@ -123,7 +123,7 @@ public class Team  {<br>
    member1.setTeam(team1);
    e.persist(member1);<br>
   //회원2 저장
-  Member member2 = new Member("member1", 회원1");
+  Member member2 = new Member("member2", 회원2");
   member2.setTeam(team1);
   e.persist(member2);
 }</code></pre>
