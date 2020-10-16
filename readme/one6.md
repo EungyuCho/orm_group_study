@@ -337,4 +337,193 @@ INNER JOIN PRODUCT P ON MP.PRODUCT_ID=P.PRODUCT_ID
 WHERE MP.PRODUCT=?</code></pre>
 실행된 SQL을 보면 연결 테이블인 MEMBER_PRODucT와 상품 테이블을 조인해서 연관된 상품을 조회한다.<br>
 <code>@ManyToMany</code> 덕분에 다대다 관계를 어플리케이션에서는 단순하게 사용할 수 있다.
-
+<h4>다대다: 양방향</h4>
+다대다 매핑이므로 역방향도 <code>@ManyToMany</code>를 설정해준다. 그리고 양쪽 중 원하는 곳에 <code>mappedBy</code>로 연관관계의 주인을 지정한다.(물론 <code>mappedBy</code>가 없는 곳이 연관관계의 주인이다.)<br>
+<pre><code>@Entity
+public class Product   {<br>
+    @Id
+    private String id;<br>
+    @ManyToMany (mappedBy = "products") //역방향 추가
+    private List&#60;Member&#62 members;
+    ...
+}</code></pre>
+다대다의 양방향 연관관계는 다음처럼 설정하면 된다.
+<pre><code>member.getProducts().add(product);
+product.getMembers().add(member);</code></pre>
+편의 메소드로 리팩토링하면
+<pre><code>public void addProduct(Product product)  {
+    ...
+    products.add(product);
+    product.getMembers().add(this);
+}</code></pre>
+연관관계 편의 메소드를 추가했으므로 다음처럼 양방향 연관관계를 설정하면 된다.<br>
+<code>member.addProduct(product);</code><br>
+양방향으로 연관관계가 설정되었으므로 <code>product.getMembers()</code>를 사용해서 역방향으로 객체 그래프를 탐색할 수 있다.
+<br>
+양방향 연관관게를 만들었으므로 <code>product.getmembers()</code>를 사용해서 역방향으로 객체 그래프를 탐색할 수 있다.
+<pre><code>public void findInverse()   {<br>
+    Product product = em.find(Product.class, "productA");
+    List&#60;Member&#62 members = product.getmembers();
+    for (Member member : members)   {
+        System.out.println("member = " + member.getUsername());
+    )
+}</code></pre>
+위 코드처럼 역방향 탐색을 할 수 있다.
+<h4>다대다: 매핑의 한계와 극복, 연결 엔티티 사용</h4>
+<code>@ManyToMany</code>를 사용하면 연결 테이블을 자동으로 처리해주므로 도메인 모델이 단순해지고 여러 가지로 편리하다. 하지만 지금 상태에서는 언제 주문을 했는지, 주문 수량은 얼마인지 알 수 없다.<br>
+Member와 Product 사이의 테이블 MemberProduct에 주문수량과 주문 날짜 컬럼을 추가해 보자.
+[그림 업데이트 예정-p226]
+위와 같이 엔티티를 설정할 것이다 아래 코드를 보자.
+<pre><code>//회원 코드
+@Entity
+public class Member{<br>
+    @Id
+    @Column (name = "MEMBER_ID")
+    private Long id;<br>
+    @OneToMany(mappedBy = "member")
+    private List&#60;MemberProducts&#62 memberproducts;<br>
+    ...
+}<br>
+//상품 코드
+@Entity
+public class Product  {<br>
+    @Id
+    @Column (name = "PRODUCT_ID")
+    private String id;<br>
+    private String name;<br>
+    ...
+}<br>
+//회원 상품 엔티티 코드
+@Entity
+@IdClass(MemberProductId.class)
+public class MemberProduct  {<br>
+    @Id
+    @ManyToOne
+    @JoinColumn(name = "MEMBER_ID")
+    private Member member;  //MemberProductId.member 와 연결<br>
+    @Id
+    @ManyToOne
+    @JoinColumn(name = "PRODUCT_ID")
+    private Product product;    //MemberProductId.product와 연결<br>
+    private int orderAmount;<br>
+    ...
+}
+//회원상품 식별자 클래스
+public class MemberProductId implements Serializable   {<br>
+    private String member;  //MemberProduct.member와 연결
+    private String product; //MemberProduct.product와 연결<br>
+    //hashCode and equals<br>
+    @Override
+    public boolean equals(Object o) {...}<br>
+    @Override
+    public int hashCode()   {...}
+}</code></pre>
+위와 같이 MemberProduct 클래스에서 복합키로 매핑하기 위해 우선 기본 키를 매핑하는 <code>@Id</code>와 <code>@JoinColumn</code>을 동시에 사용해서 기본 키 + 외래 키를 한번에 매핑했다.<br>
+<code>@IdClass</code> 어노테이션을 사용해서 복합 기본 키를 매핑하고  식별자 클래ㅔ스를 정의했다. JPA에서 복합 기본 키를 사용하려면 식별자 클래스를 위와같이 만들어야하는데 아래 조건들이 있다.
+<ul>
+    <li>복합 키는 별도의 식별자 클래스로 만들어야 한다.</li>
+    <li><code>Serializable</code>을 구현해야 한다.</li>
+    <li><code>equals</code>와 <code>hashCode</code> 메소드를 구현해야 한다.</li>
+    <li>기본 생성자가 있어야 한다</li>
+    <li>식별자 클래스는 <code>public</code>이어야 한다.</li>
+    <li><code>@IdClass</code>를 사용하는 방법 외에 <code>@EmbeddedId</code>를 사용하는 방법도 있다.</li>
+    
+</ul>
+MemberProduct는 회원과 상품의 기본 키를 받아서 자신의 기본키로 사용하는데 이렇게 부모 테이블의 기본 키를 받아서 자신의 기본 키 + 외래 키로 사용하는 것을 데이터베이스에서는 식별 관계라 한다.<br>
+이렇게 구현한 관계를 어떻게 저장하는지 살펴보자
+<pre><code>public void save()  {<br>
+    //회원 저장
+    Member member1 = new Member();
+    member1.setId("member1");
+    member1.setUsername("회원1");
+    em.persist(member1);<br>
+    //상품 저장
+    Product productA = new Product();
+    productA.setId("productA");
+    productA.setName("상품1");
+    em.persist(productA);<br>
+    //회원상품 저장
+    MemberProduct memberProduct = new MemberProduct();
+    memberProduct.setMember(member1);   //주문 회원 - 연관관계 설정
+    memberProduct.setProduct(product1); //주문 상품 - 연관관계 설정
+    memberProduct.setOrderAmount(2);    //주문 수량<br>
+    em.persist(memberProduct);
+}</code></pre>
+위처럼 회원 상품엔티티를 만들면서 연관된 회원, 상품 엔티티를 설정하면 데이터베이스에 저장할 때 각각의 식별자를 가져와서 자신의 기본 키 값으로 사용한다.<br>
+다음으로는 조회하는 코드를 살펴보자.
+<pre><code>public void find()   { 
+    //기본 키 값 생성
+    MemberProductId.memberProductId = new MemberProductId();
+    MemberProductId.setMember("member1");
+    MemberProductId.setProduct("productA");<br>
+    MemberProduct memberProduct = em.find(MemberProduct.class, memberProductId);<br>
+    Member member = memberProduct.getMember();
+    Product product = memberProduct.getProduct();<br>
+    System.out.println("member = " + member.getUsername());
+    System.out.println("product = " + product.getName());
+    System.out.println("orderAmount = " + 
+        memberProduct.getOrderAmount());<br>
+}</code></pre>
+복합키를 사용하면 이제 항상 식별자 클래스를 만들어야 한다. 식별자 클래스를 <code>em.find()</code>로 식별자를 조회해서 연관 엔티티를 생성한다.<br>
+복합키를 사용하려면 ORM 매핑에서 처리해야 할 일이 많아지므로 복합 키를 사용하지 않고 다대다 관계를 구성하는 방법도 알아보자.<br>
+<h4>다대다: 새로운 기본키 사용</h4>
+추천하는 기본 키 생성 전략은 데이터베이스에서 자동으로 생성해주는 대리 키를 Long 값으로 사용하는 것이다.<br>
+이렇게 하면 거의 영구히 쓸 수 있으며 비즈니스 로직에 의존하지 않는다. 또한 ORM 매핑 시 복합 키를 만들지 않아도 된다.<br>
+[그림 - 업데이트 예정(p231)]<br>
+위의 그림을 보면 ORDER_ID라는 새로운 기본 키를 하나 만들고 이전에 복합 키로 사용했던 MEMBER_ID, PRODUCT_ID 컬럼은 외래 키로만 사용한다.<br>
+구현 코드를 보자.
+<pre><code>@Entity
+public class Order {<br>
+    @Id @GeneratedValue
+    @Column(name = "ORDER_ID")
+    private Long id;<br>
+    @ManyToOne
+    @JoinColumn(name = "MEMBER_ID")
+    private Member member;<br>
+    @ManyToOne
+    @JoinColumn(name = "PRODUCT_ID")
+    private Product product;<br>
+    private int orderAmount;
+    ...
+}</code></pre>
+대리키를 사용함으로써 식별자클래스를 정의할 필요가 없어졌고 이해도 하기가 쉬워졌다. 저장하고 조회하는 코드를 확인해보자.
+<pre><code>//저장
+public void save()  {<br>
+   //회원 저장
+   Member member1 = new Member();
+   member1.setId("member1");
+   member1.setUsername("회원1");
+   em.persist(member1);<br>
+   //상품 저장
+   Product productA = new Product();
+   productA.setId("productA");
+   productA.setName("상품1");
+   em.persist(productA);<br>
+   //회원상품 저장
+   Order order = new Order();
+   order.setMember(member1);   //주문 회원 - 연관관계 설정
+   order.setProduct(product1); //주문 상품 - 연관관계 설정
+   order.setOrderAmount(2);    //주문 수량<br>
+   em.persist(order);
+}<br>
+//조회 
+public void find()   { 
+    //기본 키 값 생성
+    Long orderId = 1L;
+    Order order = em.find(Order.class, orderId);<br>
+    Member member = order.getMember();
+    Product product = order.getProduct();<br>
+    System.out.println("member = " + member.getUsername());
+    System.out.println("product = " + product.getName());
+    System.out.println("orderAmount = " + 
+        order.getOrderAmount());<br>
+}</code></pre>
+코드가 식별자 클래스를 사용할 때보다 훨씬 단순해진걸 알 수 있다.<br>
+<h4>다대다 연관관계 정리</h4>
+다대다 관계를 일대다 다대일 관계로 풀어내기위해 연결 테이블을 만들 때 식별자를 어떻게 구성할지 선택해야 한다.<br>
+<ul>
+    <li>식별 관계: 받아온 식별자를 기본 키 + 외래 키로 사용한다.</li>
+    <li>비식별 관계: 받아온 식별자는 외래 키로만 사용하고 새로운 식별자를 추가한다.</li>
+</ul>
+데이터베이스 설계에서는 1번처럼 부모 테이블의 기본 키를 받아서 자식 테이블의 기본 키 + 외래 키로 사용하는 것을 식별 관계라 하고, 2번처럼 단순히 외래 키로만 사용하는 것을 비식별 관계라 한다.<br>
+객체 입장에서 보면 2번처럼 비식별 관계를 사용하는 것이 편리하게 ORM 매핑을 할 수 있다. 이유는 7-3절에서 알아보자.
